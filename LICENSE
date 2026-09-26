@@ -1,0 +1,113 @@
+DualPC StreamingMic Source-Available License 1.0
+
+Copyright (c) 2026 HowardWang
+Canonical repository:
+https://github.com/howard929/DualPC-StreamingMic-Helper
+
+IMPORTANT: This is a source-available license, not an OSI-approved open-source license.
+
+1. Permission Grant
+
+Subject to the terms below, you are granted a non-exclusive, worldwide,
+royalty-free permission to:
+
+(a) use the Software for personal, educational, internal, production,
+    streaming, broadcasting, esports, and other lawful purposes;
+
+(b) use the Software in monetized livestreams, paid productions,
+    commercial content creation, and other revenue-generating end use;
+
+(c) inspect, study, modify, compile, and run the source code;
+
+(d) redistribute the Software, in original or modified form, free of charge.
+
+2. Conditions for Redistribution
+
+Any redistribution of the Software, whether in source or binary form,
+must satisfy all of the following:
+
+(a) the redistribution is free of charge;
+
+(b) this license and the original copyright notice are retained;
+
+(c) clear and reasonably prominent credit is given to the original author;
+
+(d) a visible link to the canonical GitHub repository shown above is provided;
+
+(e) any modified version is clearly identified as modified and must not be
+    represented as an official release of the original project; and
+
+(f) if a modified binary is redistributed, the corresponding modified source
+    code must also be made available under this same license.
+
+3. Commercial End Use Is Permitted
+
+For clarity, using the Software as a tool in monetized livestreams,
+commercial video production, paid esports production, professional content
+creation, or other revenue-generating work is permitted.
+
+Such use is not considered commercial redistribution of the Software.
+
+4. Commercial Redistribution and Paid Integration Are Prohibited
+
+Without prior written permission from the copyright holder, you may not:
+
+(a) sell the Software or any modified version of it;
+
+(b) charge a license fee, access fee, subscription fee, download fee,
+    or other fee for the Software itself;
+
+(c) rebrand, rename, or repackage the Software or a modified version
+    for commercial distribution;
+
+(d) bundle, embed, incorporate, or distribute the Software, a modified
+    version of the Software, or a material portion of its source code
+    as part of a paid software product, paid service, subscription product,
+    commercially licensed software package, or other commercially
+    distributed software offering; or
+
+(e) remove or obscure the required attribution, copyright notice,
+    license text, or canonical repository link.
+
+Commercial redistribution or paid integration may be separately licensed
+only with prior written permission from the copyright holder.
+
+5. No Trademark License
+
+This license does not grant permission to use the project name,
+logos, branding, or other identifiers in a way that implies endorsement,
+sponsorship, partnership, or that a modified version is an official release.
+
+Factual attribution and links required by Section 2 are permitted.
+
+6. Third-Party Software
+
+This license applies only to the original code and materials of
+DualPC-StreamingMic-Helper.
+
+NDI software, NDI Free Audio, NDI Screen Capture, and other third-party
+software are not included in this license and remain subject to their
+respective owners' licenses and terms.
+
+NDI® is a registered trademark of Vizrt NDI AB.
+This project is independent and is not affiliated with, endorsed by,
+or sponsored by Vizrt NDI AB.
+
+7. No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT,
+OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR
+THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+8. Termination
+
+Your rights under this license terminate automatically if you violate
+its terms. Upon termination, you must stop distributing the Software
+and any derivative versions.
+
+Permission may be restored only by the copyright holder in writing.
