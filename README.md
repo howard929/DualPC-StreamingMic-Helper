@@ -1,5 +1,7 @@
 # DualPC-StreamingMic-Helper
 
+[English](README_EN.md) | 简体中文
+
 一个面向 Windows 的轻量托盘小工具，用于在**无采集卡双机直播**工作流中，把游戏电脑的 **Windows 默认麦克风**通过 NDI® Free Audio 单独发送到直播电脑。
 
 > 当前版本：**v1.0.0**
