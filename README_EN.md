@@ -2,13 +2,13 @@
 
 English | [简体中文](README.md)
 
-A lightweight Windows system tray helper for **capture-card-free dual-PC streaming**, designed to send the gaming PC's **Windows default microphone** separately to the streaming PC through NDI® Free Audio.
+A lightweight Windows system tray helper for **capture-card-free dual-PC streaming**, designed to send the gaming PC's **selected microphone / audio input device** separately to the streaming PC through NDI® Free Audio.
 
-> Current version: **v1.0.0**
+> Current version: **v1.1.0**
 >
-> v1.0.0 UI language: **Simplified Chinese**
+> UI languages: **Simplified Chinese / English**
 >
-> English UI support is planned for a future release.
+> Simplified Chinese is the default. Change languages from the tray menu.
 
 ## Why This Project Exists
 
@@ -22,12 +22,12 @@ DualPC-StreamingMic-Helper provides a simple Windows tray interface for NDI Free
 
 It can:
 
-- Use the current Windows default microphone.
+- Use the Windows default microphone or select a specific audio input device.
 - Launch NDI Free Audio silently in the background.
 - Show the current sending status in the system tray.
 - Restart the microphone NDI output.
 - Let the user manually select the NDI Free Audio executable.
-- Remember the selected NDI Free Audio path.
+- Remember the selected language, input device, and NDI Free Audio path.
 - Automatically stop the Free Audio process started by this helper when the helper exits.
 
 ## Recommended Dual-PC Setup
@@ -39,7 +39,7 @@ Gaming PC
 │  └─ Game / Discord / Music / Desktop Playback Audio
 │
 └─ DualPC-StreamingMic-Helper
-   └─ Windows Default Microphone
+   └─ Selected Microphone / Audio Input
              │
              │ Local Network
              ▼
@@ -51,10 +51,12 @@ Streaming PC
       OBS / Other NDI-Compatible Software
 ```
 
-## v1.0.0 Features
+## v1.1.0 Features
 
 - Runs in the Windows system tray
-- Uses the Windows default microphone
+- Uses the Windows default microphone or a selected input device
+- Simplified Chinese / English UI with saved language preference
+- Restart immediately after changing devices, or save for the next restart
 - NDI source name: `NDI Microphone`
 - Manually select and save the path to `NDI FreeAudio.exe`
 - No visible CMD or PowerShell window
@@ -62,10 +64,10 @@ Streaming PC
 - Automatically stop the Free Audio process when exiting
 - Prevent multiple instances of the helper from running at the same time
 
-The saved Free Audio path is stored at:
+Language, input device, and Free Audio path are stored at:
 
 ```text
-%APPDATA%\NDI-Mic\freeaudio_path.txt
+%APPDATA%\NDI-Mic\helper-settings.json
 ```
 
 ## Requirements
@@ -92,41 +94,38 @@ The exact setup depends on your streaming software and workflow.
 
 ## First-Time Setup
 
-1. In Windows, set the microphone you want to use for streaming as your **default recording/input device**.
-
-2. Launch:
-
-```text
-DualPC-StreamingMic-Helper.exe
-```
-
-3. On first launch, the system tray icon will indicate that the NDI Free Audio path has not yet been configured.
-
-4. Right-click the tray icon.
-
-5. Select:
-
-```text
-设置 NDI Free Audio 路径...
-```
-
-6. Click the browse button and select your installed:
-
-```text
-NDI FreeAudio.exe
-```
-
-7. Save the setting.
-
-8. The helper will launch NDI Free Audio and create an NDI audio source named:
+1. Download `DualPC-StreamingMic-Helper.exe` from [Releases](https://github.com/howard929/DualPC-StreamingMic-Helper/releases). Exit the previous helper before upgrading.
+2. Launch the helper. If you plan to use Windows Default, set your intended microphone as the Windows default recording/input device.
+3. Right-click the tray icon and choose **语言 / Language → English**.
+4. If no Free Audio path is saved, choose **Set NDI Free Audio path...**.
+5. Click **Browse...**, select your installed `NDI FreeAudio.exe`, and save.
+6. Free Audio starts in the background with the source name:
 
 ```text
 NDI Microphone
 ```
 
-The selected Free Audio path will be remembered automatically.
+The selected Free Audio path will be remembered. If an NDI update changes the installation path, select the executable again from the tray menu. The helper does not scan installation folders.
 
-If an NDI update changes the installation path, simply open the tray menu and select the Free Audio executable again.
+## Language and Audio Devices
+
+- **语言 / Language**: choose Simplified Chinese or English. Changes apply immediately and persist; this top-level menu always remains bilingual.
+- **音频设备 / Audio Device**: choose Windows Default or one specific input. Names come from Free Audio itself; output-device management is not included.
+
+Changing the device opens a restart prompt:
+
+- **Restart** stops the current Free Audio process, saves the selection, and starts with the new input.
+- **Cancel** still saves the selection, keeps the current session running, and applies the new input on the next restart.
+
+Double-click the tray icon to see the current input, Free Audio path, and any pending device selection. Sending status reflects the Free Audio process state; it does not confirm audio reception on the other PC.
+
+Missing or ambiguous device names require reselection. The helper does not silently substitute another microphone. Keep devices connected while switching, as hot-plugging may change the device list.
+
+## Upgrading From v1.0.0
+
+Exit the previous helper before launching v1.1.0. When the new settings file does not exist, the helper imports the path from `%APPDATA%\NDI-Mic\freeaudio_path.txt` and defaults to Simplified Chinese and Windows Default.
+
+The old path file remains unchanged. New preferences are saved in `helper-settings.json`; returning to v1.0.0 uses the original path file.
 
 ## Screen Capture HX Suggested Setup
 
@@ -147,7 +146,7 @@ Screen Capture HX
 = Game Video + Desktop Playback Audio
 
 NDI Microphone
-= Windows Default Microphone
+= Selected Microphone / Audio Input
 ```
 
 This keeps desktop audio and microphone audio separate on the streaming PC.
@@ -186,6 +185,10 @@ The compiled executable will normally be located at:
 src\bin\Release\net8.0-windows\win-x64\publish\
 ```
 
+Alternatively, run `Build.cmd` in `src`. The published Windows x64 executable is self-contained and does not require a separate .NET Runtime installation.
+
+After building, run `Verify.ps1` from the repository root using PowerShell 7 to check migration, persistence, parsing, and translations. Results are written to `verification-output/`, without changing personal settings.
+
 ## Windows Security Notice
 
 Prebuilt releases of this project may not be signed with a commercial code-signing certificate.
@@ -195,7 +198,7 @@ Because of this, Windows SmartScreen or Smart App Control may display a warning 
 If you do not trust the prebuilt executable, you can inspect:
 
 ```text
-src/Program.cs
+src/
 ```
 
 and build the application yourself from source.
@@ -204,20 +207,19 @@ and build the application yourself from source.
 
 ## Project Status
 
-### v1.0.0
+### v1.1.0
 
-- Simplified Chinese UI
-- Basic system tray functionality
-- Windows default microphone support
-- Manual NDI Free Audio executable selection
-- Saved Free Audio path
-- Background Free Audio process management
+- Simplified Chinese / English UI
+- Input-device selection with Windows Default preserved
+- Device-change restart prompt and pending selection display
+- Persistent language, input device, and Free Audio path
+- Existing tray, single-instance, and background process management retained
 
-### Planned
+Compilation, automated checks, and author functional acceptance are complete. See [v1.1.0 release notes](RELEASE_NOTES_v1.1.0.md).
 
-- English UI support
-- Improved status messages
-- Additional usability improvements without making the application unnecessarily complex
+### Future Direction
+
+Continue improving usability without unnecessary complexity. Additional features will be discussed separately.
 
 ## License
 
@@ -257,3 +259,4 @@ Original project author: **HowardWang**
 Canonical repository:
 
 https://github.com/howard929/DualPC-StreamingMic-Helper
+

@@ -21,7 +21,7 @@ internal static class Program
         if (!createdNew)
         {
             MessageBox.Show(
-                "NDI Microphone 已经在运行。",
+                Ui.T("NDI Microphone 已经在运行。"),
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -38,78 +38,111 @@ internal static class Program
     }
 }
 
-internal sealed class TrayApplicationContext : ApplicationContext
+internal sealed partial class TrayApplicationContext : ApplicationContext
 {
+    // =========================================================
+    // 基本设置
+    // =========================================================
+
     private const string NdiSourceName = "NDI Microphone";
-    private const string AudioInput = "default";
 
-    private static readonly string SettingsDirectory =
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "NDI-Mic"
-        );
-
-    private static readonly string SettingsFile =
-        Path.Combine(
-            SettingsDirectory,
-            "freeaudio_path.txt"
-        );
+    // =========================================================
+    // 托盘相关
+    // =========================================================
 
     private readonly NotifyIcon trayIcon;
     private readonly ContextMenuStrip trayMenu;
+
     private readonly ToolStripMenuItem statusItem;
     private readonly ToolStripMenuItem restartItem;
     private readonly ToolStripMenuItem setPathItem;
     private readonly ToolStripMenuItem exitItem;
+
     private readonly System.Windows.Forms.Timer processTimer;
 
+
+    // =========================================================
+    // NDI Free Audio
+    // =========================================================
+
     private Process? freeAudioProcess;
+
     private string? configuredPath;
+
     private bool isExiting = false;
+
+
+    // =========================================================
+    // 初始化
+    // =========================================================
 
     public TrayApplicationContext()
     {
-        configuredPath = LoadConfiguredPath();
+        configuredPath = Settings.Current.FreeAudioPath;
 
         trayMenu = new ContextMenuStrip();
 
+
+        // 状态
         statusItem = new ToolStripMenuItem(
-            "✕ NDI Microphone 未发送"
+            Ui.T("✕ NDI Microphone 未发送")
         );
+
         statusItem.Enabled = false;
+
         trayMenu.Items.Add(statusItem);
 
-        trayMenu.Items.Add(new ToolStripSeparator());
 
-        restartItem = new ToolStripMenuItem(
-            "重新启动 NDI 麦克风"
+        trayMenu.Items.Add(
+            new ToolStripSeparator()
         );
+
+
+        // 重新启动
+        restartItem = new ToolStripMenuItem(
+            Ui.T("重新启动 NDI 麦克风")
+        );
+
         restartItem.Click += (_, _) =>
         {
             RestartFreeAudio();
         };
+
         trayMenu.Items.Add(restartItem);
 
+
+        // 设置 Free Audio 路径
         setPathItem = new ToolStripMenuItem(
-            "设置 NDI Free Audio 路径..."
+            Ui.T("设置 NDI Free Audio 路径...")
         );
+
         setPathItem.Click += (_, _) =>
         {
             ConfigureFreeAudioPath();
         };
+
         trayMenu.Items.Add(setPathItem);
 
-        trayMenu.Items.Add(new ToolStripSeparator());
 
-        exitItem = new ToolStripMenuItem(
-            "退出 NDI 麦克风"
+        trayMenu.Items.Add(
+            new ToolStripSeparator()
         );
+
+
+        // 退出
+        exitItem = new ToolStripMenuItem(
+            Ui.T("退出 NDI 麦克风")
+        );
+
         exitItem.Click += (_, _) =>
         {
             ExitApplication();
         };
+
         trayMenu.Items.Add(exitItem);
 
+
+        // 托盘图标
         trayIcon = new NotifyIcon
         {
             Icon = SystemIcons.Warning,
@@ -118,11 +151,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
             Visible = true
         };
 
+
+        // 双击托盘图标显示状态信息
         trayIcon.DoubleClick += (_, _) =>
         {
             ShowCurrentStatus();
         };
 
+
+        // 每秒检查一次 Free Audio 是否仍然运行
         processTimer = new System.Windows.Forms.Timer
         {
             Interval = 1000
@@ -134,6 +171,18 @@ internal sealed class TrayApplicationContext : ApplicationContext
         };
 
         processTimer.Start();
+        InitializeOptions();
+
+
+        // =====================================================
+        // 启动时：
+        //
+        // 只读取用户之前保存的路径。
+        //
+        // 不搜索磁盘。
+        // 不扫描 Program Files。
+        // 不检查 PATH。
+        // =====================================================
 
         if (
             !string.IsNullOrWhiteSpace(configuredPath) &&
@@ -145,27 +194,33 @@ internal sealed class TrayApplicationContext : ApplicationContext
         else
         {
             configuredPath = null;
+
             SetStoppedStatus();
 
             trayIcon.ShowBalloonTip(
                 4000,
                 "NDI Microphone",
-                "请右键托盘图标，设置 NDI Free Audio 路径。",
+                Ui.T("请右键托盘图标，设置 NDI Free Audio 路径。"),
                 ToolTipIcon.Warning
             );
         }
     }
 
-    private void StartFreeAudio()
+
+    // =========================================================
+    // 启动 Free Audio
+    // =========================================================
+
+    private async void StartFreeAudio()
     {
         if (string.IsNullOrWhiteSpace(configuredPath))
         {
             SetStoppedStatus();
 
             MessageBox.Show(
-                "还没有设置 NDI Free Audio 的路径。\n\n" +
-                "请右键托盘图标，然后选择：\n" +
-                "“设置 NDI Free Audio 路径...”",
+                Ui.T("还没有设置 NDI Free Audio 的路径。\n\n") +
+                Ui.T("请右键托盘图标，然后选择：\n") +
+                Ui.T("“设置 NDI Free Audio 路径...”"),
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
@@ -174,14 +229,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+
         if (!File.Exists(configuredPath))
         {
             SetStoppedStatus();
 
             MessageBox.Show(
-                "之前保存的 NDI Free Audio 路径已经不存在：\n\n" +
+                Ui.T("之前保存的 NDI Free Audio 路径已经不存在：\n\n") +
                 configuredPath +
-                "\n\n请重新设置路径。",
+                Ui.T("\n\n请重新设置路径。"),
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
@@ -190,18 +246,24 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
-        StopFreeAudio();
 
+        if (isExiting || startBusy) return;
+        startBusy = true;
+        setPathItem.Enabled = false;
+        deviceMenu.Enabled = false;
+        restartItem.Enabled = false;
         try
         {
+            if (!StopFreeAudio()) return;
+            SetStoppedStatus();
+            string input = await ResolveInput();
+            if (isExiting) return;
             ProcessStartInfo startInfo =
                 new ProcessStartInfo
                 {
                     FileName = configuredPath,
 
-                    Arguments =
-                        $"-input {AudioInput} " +
-                        $"-input_name \"{NdiSourceName}\"",
+
 
                     UseShellExecute = false,
 
@@ -211,77 +273,96 @@ internal sealed class TrayApplicationContext : ApplicationContext
                         ProcessWindowStyle.Hidden,
 
                     WorkingDirectory =
-                        Path.GetDirectoryName(configuredPath) ?? string.Empty
+                        Path.GetDirectoryName(
+                            configuredPath
+                        ) ?? string.Empty
                 };
 
+
+            startInfo.ArgumentList.Add("-input");
+            startInfo.ArgumentList.Add(input);
+            startInfo.ArgumentList.Add("-input_name");
+            startInfo.ArgumentList.Add(NdiSourceName);
             freeAudioProcess = Process.Start(startInfo);
+            activeDevice = Settings.Current.InputDevice;
+
 
             if (freeAudioProcess == null)
             {
                 throw new InvalidOperationException(
-                    "无法启动 NDI Free Audio。"
+                    Ui.T("无法启动 NDI Free Audio。")
                 );
             }
 
+
             SetRunningStatus();
+
 
             trayIcon.ShowBalloonTip(
                 2500,
                 "NDI Microphone",
-                "默认麦克风正在通过 NDI 发送。",
+                Ui.T("所选输入正在通过 NDI 发送。", "The selected input is sending through NDI."),
                 ToolTipIcon.Info
             );
         }
         catch (Exception ex)
         {
+            if (isExiting) return;
+            freeAudioProcess?.Dispose();
             freeAudioProcess = null;
 
             SetStoppedStatus();
 
+
             MessageBox.Show(
-                "NDI Free Audio 启动失败。\n\n" +
+                Ui.T("NDI Free Audio 启动失败。\n\n") +
                 ex.Message,
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Error
             );
         }
+        finally
+        {
+            startBusy = false;
+            if (!isExiting)
+            {
+                setPathItem.Enabled = true;
+                deviceMenu.Enabled = true;
+                restartItem.Enabled = !string.IsNullOrWhiteSpace(configuredPath);
+            }
+        }
     }
 
-    private void StopFreeAudio()
-    {
-        if (freeAudioProcess == null)
-        {
-            return;
-        }
 
+    // =========================================================
+    // 停止 Free Audio
+    // =========================================================
+
+    private bool StopFreeAudio()
+    {
+        if (freeAudioProcess == null) return true;
         try
         {
             if (!freeAudioProcess.HasExited)
             {
-                freeAudioProcess.Kill(
-                    entireProcessTree: true
-                );
-
-                freeAudioProcess.WaitForExit(
-                    2000
-                );
+                freeAudioProcess.Kill(entireProcessTree: true);
+                if (!freeAudioProcess.WaitForExit(2000)) throw new TimeoutException();
             }
-        }
-        catch
-        {
-        }
-
-        try
-        {
             freeAudioProcess.Dispose();
+            freeAudioProcess = null;
+            return true;
         }
-        catch
+        catch (Exception ex)
         {
+            MessageBox.Show(Ui.T("无法停止 Free Audio；不会启动新的发送进程。\n", "Could not stop Free Audio; no new sender will be started.\n") + ex.Message, NdiSourceName);
+            return false;
         }
-
-        freeAudioProcess = null;
     }
+
+    // =========================================================
+    // 重启 Free Audio
+    // =========================================================
 
     private void RestartFreeAudio()
     {
@@ -291,12 +372,18 @@ internal sealed class TrayApplicationContext : ApplicationContext
         )
         {
             ConfigureFreeAudioPath();
+
             return;
         }
 
-        StopFreeAudio();
+
         StartFreeAudio();
     }
+
+
+    // =========================================================
+    // 检查进程
+    // =========================================================
 
     private void CheckFreeAudioProcess()
     {
@@ -305,21 +392,25 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+
         try
         {
             if (freeAudioProcess.HasExited)
             {
                 freeAudioProcess.Dispose();
+
                 freeAudioProcess = null;
 
+
                 SetStoppedStatus();
+
 
                 if (!isExiting)
                 {
                     trayIcon.ShowBalloonTip(
                         3500,
                         "NDI Microphone",
-                        "NDI Free Audio 已停止运行。",
+                        Ui.T("NDI Free Audio 已停止运行。"),
                         ToolTipIcon.Warning
                     );
                 }
@@ -328,31 +419,43 @@ internal sealed class TrayApplicationContext : ApplicationContext
         catch
         {
             freeAudioProcess = null;
+
             SetStoppedStatus();
         }
     }
 
+
+    // =========================================================
+    // 设置 Free Audio 路径
+    // =========================================================
+
     private void ConfigureFreeAudioPath()
     {
+        if (startBusy || isExiting) return;
         using FreeAudioPathForm dialog =
             new FreeAudioPathForm(
                 configuredPath ?? string.Empty
             );
 
-        DialogResult result = dialog.ShowDialog();
 
-        if (result != DialogResult.OK)
+        DialogResult result =
+            dialog.ShowDialog();
+
+
+        if (isExiting || result != DialogResult.OK)
         {
             return;
         }
 
+
         string selectedPath =
             dialog.SelectedPath.Trim().Trim('"');
+
 
         if (string.IsNullOrWhiteSpace(selectedPath))
         {
             MessageBox.Show(
-                "请输入 NDI Free Audio 的路径。",
+                Ui.T("请输入 NDI Free Audio 的路径。"),
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
@@ -361,10 +464,11 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+
         if (!File.Exists(selectedPath))
         {
             MessageBox.Show(
-                "找不到这个文件：\n\n" +
+                Ui.T("找不到这个文件：\n\n") +
                 selectedPath,
                 "NDI Microphone",
                 MessageBoxButtons.OK,
@@ -373,6 +477,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
 
             return;
         }
+
 
         if (
             !string.Equals(
@@ -383,7 +488,7 @@ internal sealed class TrayApplicationContext : ApplicationContext
         )
         {
             MessageBox.Show(
-                "请选择 NDI FreeAudio.exe。",
+                Ui.T("请选择 NDI FreeAudio.exe。"),
                 "NDI Microphone",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
@@ -392,7 +497,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
+
+        string? previousPath = configuredPath;
         configuredPath = selectedPath;
+
 
         try
         {
@@ -402,8 +510,10 @@ internal sealed class TrayApplicationContext : ApplicationContext
         }
         catch (Exception ex)
         {
+            configuredPath = previousPath;
+            Settings.Current.FreeAudioPath = previousPath;
             MessageBox.Show(
-                "无法保存设置：\n\n" +
+                Ui.T("无法保存设置：\n\n") +
                 ex.Message,
                 "NDI Microphone",
                 MessageBoxButtons.OK,
@@ -413,53 +523,26 @@ internal sealed class TrayApplicationContext : ApplicationContext
             return;
         }
 
-        StopFreeAudio();
+
+        // 路径修改后立即使用新路径重启
         StartFreeAudio();
     }
 
+
+    // =========================================================
+    // 保存路径
+    // =========================================================
+
     private static void SaveConfiguredPath(string path)
     {
-        Directory.CreateDirectory(
-            SettingsDirectory
-        );
-
-        File.WriteAllText(
-            SettingsFile,
-            path
-        );
-    }
-
-    private static string? LoadConfiguredPath()
-    {
-        try
-        {
-            if (!File.Exists(SettingsFile))
-            {
-                return null;
-            }
-
-            string path =
-                File.ReadAllText(
-                    SettingsFile
-                ).Trim();
-
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return null;
-            }
-
-            return path;
-        }
-        catch
-        {
-            return null;
-        }
+        Settings.Current.FreeAudioPath = path;
+        Settings.Save();
     }
 
     private void SetRunningStatus()
     {
         statusItem.Text =
-            "✓ NDI Microphone 正在发送";
+            Ui.T("✓ NDI Microphone 正在发送");
 
         trayIcon.Icon =
             SystemIcons.Information;
@@ -470,10 +553,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
         restartItem.Enabled = true;
     }
 
+
+    // =========================================================
+    // 停止状态
+    // =========================================================
+
     private void SetStoppedStatus()
     {
         statusItem.Text =
-            "✕ NDI Microphone 未发送";
+            Ui.T("✕ NDI Microphone 未发送");
 
         trayIcon.Icon =
             SystemIcons.Warning;
@@ -487,9 +575,15 @@ internal sealed class TrayApplicationContext : ApplicationContext
             );
     }
 
+
+    // =========================================================
+    // 双击托盘状态
+    // =========================================================
+
     private void ShowCurrentStatus()
     {
         string processStatus;
+
 
         if (
             freeAudioProcess != null &&
@@ -497,20 +591,22 @@ internal sealed class TrayApplicationContext : ApplicationContext
         )
         {
             processStatus =
-                "状态：正在发送";
+                Ui.T("状态：正在发送");
         }
         else
         {
             processStatus =
-                "状态：未发送";
+                Ui.T("状态：未发送");
         }
+
 
         string pathStatus =
             string.IsNullOrWhiteSpace(
                 configuredPath
             )
-                ? "未设置"
+                ? Ui.T("未设置")
                 : configuredPath;
+
 
         MessageBox.Show(
             processStatus +
@@ -518,8 +614,8 @@ internal sealed class TrayApplicationContext : ApplicationContext
             "NDI Source：\n" +
             NdiSourceName +
             "\n\n" +
-            "麦克风：\n" +
-            "Windows 默认麦克风" +
+            Ui.T("麦克风：\n") +
+            DeviceDescription() +
             "\n\n" +
             "NDI Free Audio：\n" +
             pathStatus,
@@ -529,24 +625,44 @@ internal sealed class TrayApplicationContext : ApplicationContext
         );
     }
 
+
+    // =========================================================
+    // 退出
+    // =========================================================
+
     private void ExitApplication()
     {
         isExiting = true;
 
+
         processTimer.Stop();
 
-        StopFreeAudio();
+        if (!StopFreeAudio()) { isExiting = false; processTimer.Start(); return; }
+        try { AudioDevices.StopQueries(); }
+        catch (Exception ex)
+        {
+            isExiting = false;
+            processTimer.Start();
+            MessageBox.Show(Ui.T("无法关闭设备查询进程：", "Could not stop the device query: ") + ex.Message, NdiSourceName);
+            return;
+        }
 
         trayIcon.Visible = false;
+
         trayIcon.Dispose();
 
         trayMenu.Dispose();
+
         processTimer.Dispose();
+
 
         ExitThread();
     }
 
-    protected override void Dispose(bool disposing)
+
+    protected override void Dispose(
+        bool disposing
+    )
     {
         if (disposing)
         {
@@ -556,9 +672,22 @@ internal sealed class TrayApplicationContext : ApplicationContext
             }
         }
 
+
         base.Dispose(disposing);
     }
 }
+
+
+// =============================================================
+// NDI Free Audio 路径设置窗口
+//
+// 用户可以：
+// 1. 直接输入路径
+// 2. 粘贴路径
+// 3. 点击“浏览...”选择 EXE
+//
+// 不进行任何自动文件扫描。
+// =============================================================
 
 internal sealed class FreeAudioPathForm : Form
 {
@@ -567,23 +696,30 @@ internal sealed class FreeAudioPathForm : Form
     public string SelectedPath =>
         pathTextBox.Text;
 
-    public FreeAudioPathForm(string currentPath)
+
+    public FreeAudioPathForm(
+        string currentPath
+    )
     {
         Text =
-            "设置 NDI Free Audio 路径";
+            Ui.T("设置 NDI Free Audio 路径");
 
         Width = 650;
+
         Height = 190;
 
         FormBorderStyle =
             FormBorderStyle.FixedDialog;
 
         MaximizeBox = false;
+
         MinimizeBox = false;
+
         ShowInTaskbar = false;
 
         StartPosition =
             FormStartPosition.CenterScreen;
+
 
         Label descriptionLabel =
             new Label
@@ -594,8 +730,9 @@ internal sealed class FreeAudioPathForm : Form
                 Height = 35,
 
                 Text =
-                    "请选择或输入 NDI FreeAudio.exe 的完整路径："
+                    Ui.T("请选择或输入 NDI FreeAudio.exe 的完整路径：")
             };
+
 
         pathTextBox =
             new TextBox
@@ -606,6 +743,7 @@ internal sealed class FreeAudioPathForm : Form
                 Text = currentPath
             };
 
+
         Button browseButton =
             new Button
             {
@@ -613,13 +751,15 @@ internal sealed class FreeAudioPathForm : Form
                 Top = 53,
                 Width = 90,
                 Height = 27,
-                Text = "浏览..."
+                Text = Ui.T("浏览...")
             };
+
 
         browseButton.Click += (_, _) =>
         {
             BrowseForFreeAudio();
         };
+
 
         Button saveButton =
             new Button
@@ -628,9 +768,10 @@ internal sealed class FreeAudioPathForm : Form
                 Top = 100,
                 Width = 90,
                 Height = 30,
-                Text = "保存",
+                Text = Ui.T("保存"),
                 DialogResult = DialogResult.OK
             };
+
 
         Button cancelButton =
             new Button
@@ -639,15 +780,31 @@ internal sealed class FreeAudioPathForm : Form
                 Top = 100,
                 Width = 90,
                 Height = 30,
-                Text = "取消",
+                Text = Ui.T("取消"),
                 DialogResult = DialogResult.Cancel
             };
 
-        Controls.Add(descriptionLabel);
-        Controls.Add(pathTextBox);
-        Controls.Add(browseButton);
-        Controls.Add(saveButton);
-        Controls.Add(cancelButton);
+
+        Controls.Add(
+            descriptionLabel
+        );
+
+        Controls.Add(
+            pathTextBox
+        );
+
+        Controls.Add(
+            browseButton
+        );
+
+        Controls.Add(
+            saveButton
+        );
+
+        Controls.Add(
+            cancelButton
+        );
+
 
         AcceptButton =
             saveButton;
@@ -656,23 +813,25 @@ internal sealed class FreeAudioPathForm : Form
             cancelButton;
     }
 
+
     private void BrowseForFreeAudio()
     {
         using OpenFileDialog dialog =
             new OpenFileDialog
             {
                 Title =
-                    "选择 NDI FreeAudio.exe",
+                    Ui.T("选择 NDI FreeAudio.exe"),
 
                 Filter =
                     "NDI Free Audio|NDI FreeAudio.exe|" +
-                    "EXE 文件|*.exe|" +
-                    "所有文件|*.*",
+                    Ui.T("EXE 文件|*.exe|", "EXE files|*.exe|") +
+                    Ui.T("所有文件|*.*", "All files|*.*"),
 
                 CheckFileExists = true,
 
                 Multiselect = false
             };
+
 
         if (
             !string.IsNullOrWhiteSpace(
@@ -686,6 +845,7 @@ internal sealed class FreeAudioPathForm : Form
                     Path.GetDirectoryName(
                         pathTextBox.Text
                     );
+
 
                 if (
                     !string.IsNullOrWhiteSpace(
@@ -704,6 +864,7 @@ internal sealed class FreeAudioPathForm : Form
             {
             }
         }
+
 
         if (
             dialog.ShowDialog() ==
